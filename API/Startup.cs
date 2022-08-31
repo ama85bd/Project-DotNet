@@ -6,6 +6,7 @@ using API.Extensions;
 using Application.Activities;
 using Application.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -35,8 +36,36 @@ namespace API
         {
 
             services.AddControllers();
+            
            services.AddApplicationServices(_config);
            services.AddIdentityServices(_config);
+           services.AddSwaggerGen(setup =>
+{
+    // Include 'SecurityScheme' to use JWT Authentication
+    var jwtSecurityScheme = new OpenApiSecurityScheme
+    {
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Name = "JWT Authentication",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Description = "Put **_ONLY_** your JWT Bearer token on textbox below!",
+
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    setup.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+
+    setup.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtSecurityScheme, Array.Empty<string>() }
+    });
+
+});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -49,9 +78,16 @@ namespace API
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebAPIv5 v1"));
             }
 
-            app.UseHttpsRedirection();
+            // app.UseSwagger();
+            // app.UseSwaggerUI(c=>{
+            //     c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebAPILGEDv5 v1");
+            // });
+
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 
